@@ -214,7 +214,6 @@ var json1 =  {
                }
             }
          }
-         console.log('fin upload coté cloud' + JSON.stringify(response));
          callback();
       });
 };
@@ -245,7 +244,6 @@ CloudAPI.prototype.roundtrip = function(method, path, json, callback) {
 CloudAPI.prototype.invoke = function(method, path, json, callback) {
   var options;
 
-  console.log(method + path);
   var self = this;
 
   if ((!callback) && (typeof json === 'function')) {
