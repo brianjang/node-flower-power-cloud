@@ -145,13 +145,13 @@ CloudAPI.prototype.getGarden = function(callback) {
           location = results.locations[i];
           id = location.location_identifier;
           delete(location.location_identifier);
-          
+
         for (i = 0; i < results.sensors.length; i++) {
           sensor = results.sensors[i];
           tabHistoryIndex.push(sensor.current_history_index);
     }
 
-        }          
+        }
       }
 
       if (--count === 0) callback(null, sensors, tabSensorSerial, tabHistoryIndex, user_config_version);
@@ -166,7 +166,7 @@ var json1 =  {
             client_datetime_utc : new Date(),
             user_config_version : user_config_version,
             tmz_offset : (new Date()).getTimezoneOffset(),
-            
+
             session_histories : [{
                sensor_serial : sensor_serial,
                session_id : currentID,
@@ -174,7 +174,7 @@ var json1 =  {
                sensor_startup_timestamp_utc : sUpTime,
                session_start_index : sessionStartIndex
             }],
-            
+
             uploads : [{
                sensor_serial : sensor_serial,
                upload_timestamp_utc : new Date(),
@@ -184,7 +184,7 @@ var json1 =  {
                sensor_hw_identifier : "",
             }]
            };
-           
+
       request({
          proxy: undefined,
          method: 'PUT',
@@ -202,7 +202,8 @@ var json1 =  {
          } else {
             body = JSON.parse(body);
             if((body.hasOwnProperty("errors") && (body.errors.length > 0))){
-               callback(body.errors[0], null);  
+                console.log(body.errors[0]);
+               callback(body.errors[0], null);
             }
             else {
                if (self.formatter instanceof Function){
@@ -213,6 +214,8 @@ var json1 =  {
                }
             }
          }
+         console.log('fin upload coté cloud' + JSON.stringify(response));
+         callback();
       });
 };
 
@@ -242,6 +245,7 @@ CloudAPI.prototype.roundtrip = function(method, path, json, callback) {
 CloudAPI.prototype.invoke = function(method, path, json, callback) {
   var options;
 
+  console.log(method + path);
   var self = this;
 
   if ((!callback) && (typeof json === 'function')) {
