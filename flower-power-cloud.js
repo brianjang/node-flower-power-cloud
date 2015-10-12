@@ -118,7 +118,7 @@ CloudAPI.prototype.getGarden = function(callback) {
 
     sensors = {};
     for (i = 0; i < results.locations.length; i++) {
-      sensors[results.locations[i].sensor.system_id] = results.locations[i];
+      sensors[results.locations[i].sensor.sensor_identifier] = results.locations[i];
     }
 
     callback(null, sensors);
@@ -136,7 +136,7 @@ CloudAPI.prototype.getUserConfig = function(callback) {
 CloudAPI.prototype.sendHistory = function(param, callback) {
   var self = this;
 
-  return self.invoke('PUT', '/sensor_data/v5/sample', JSON.stringify(param), function(err, code, results) {
+  return self.invoke('PUT', '/sensor_data/v8/sample', JSON.stringify(param), function(err, code, results) {
     if (err || code > 210) {
       callback(err, results);
     }
