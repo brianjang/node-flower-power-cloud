@@ -7,6 +7,7 @@ var https       = require('https')
 , querystring = require('querystring')
 , url         = require('url')
 , util        = require('util')
+, async       = require('async')
 ;
 
 
@@ -110,18 +111,29 @@ CloudAPI.prototype._refresh = function(self, callback) {
 CloudAPI.prototype.getGarden = function(callback) {
   var self = this;
 
-  return self.invoke('GET', '/garden/v1/configuration', function(err, code, results) {
-    var count, i, location, locations, sensor, sensors, last_sample_utc, first_sample_utc;
+  async.series({
+    configuration: function(callback) {
+      self.invoke('GET', '/garden/v1/configuration', function(err, code, results) {
+        var configuration = {};
 
+        for (var i = 0; i < results.locations.length; i++) {
+          configuration[results.locations[i].sensor.sensor_identifier] = results.locations[i];
+        }
+        callback(err, configuration);
+      });
+    },
+    status: function(callback) {
+      self.invoke('GET', '/garden/v1/status', function(err, code, results) {
+        var status = {};
 
-    if (!!err) return callback(err);
-
-    sensors = {};
-    for (i = 0; i < results.locations.length; i++) {
-      sensors[results.locations[i].sensor.sensor_identifier] = results.locations[i];
+        for (var i = 0; i < results.locations.length; i++) {
+          status[results.locations[i].sensor.sensor_identifier] = results.locations[i];
+        }
+        callback(null, status);
+      });
     }
-
-    callback(null, sensors);
+  }, function(error, results) {
+    callback(error, results);
   });
 };
 
@@ -133,15 +145,15 @@ CloudAPI.prototype.getUserConfig = function(callback) {
   });
 }
 
-CloudAPI.prototype.sendHistory = function(param, callback) {
+CloudAPI.prototype.sendSamples = function(parameters, callback) {
   var self = this;
 
-  return self.invoke('PUT', '/sensor_data/v8/sample', JSON.stringify(param), function(err, code, results) {
+  return self.invoke('PUT', '/sensor_data/v8/sample', JSON.stringify(parameters), function(err, code, results) {
     if (err || code > 210) {
       callback(err, results);
     }
     else {
-      callback(err, param.uploads[0].buffer_base64);
+      callback(err, parameters.uploads[0].buffer_base64);
     }
   });
 }
