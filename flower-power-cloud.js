@@ -44,13 +44,15 @@ CloudAPI.prototype.login = function(username, passphrase, callback) {
 
   if (typeof callback !== 'function') throw new Error('callback is mandatory for login');
 
-  json = { username      : username
-    , client_secret : self.options.clientSecret
-    , password      : passphrase
-    , client_id     : self.options.clientID
-    , grant_type    : 'password'
+  json = { username       : username
+    , client_secret       : self.options.clientSecret
+    , password            : passphrase
+    , client_id           : self.options.clientID
+    , grant_type          : 'password'
+    , app_identifier      : ""
+	  , notification_token  : ""
   };
-  self.invoke('POST', '/user/v2/authenticate', json, function(err, code, results) {
+  self.invoke('POST', '/user/v3/authenticate', json, function(err, code, results) {
     if (!!err) callback(err);
 
     if (code !== 200) return callback(new Error('invalid credentials: code=' + code + ' results=' + JSON.stringify(results)));
@@ -108,59 +110,18 @@ CloudAPI.prototype._refresh = function(self, callback) {
 CloudAPI.prototype.getGarden = function(callback) {
   var self = this;
 
-  return self.invoke('GET', '/sensor_data/v4/garden_locations_status', function(err, code, results) {
+  return self.invoke('GET', '/garden/v1/configuration', function(err, code, results) {
     var count, i, location, locations, sensor, sensors, last_sample_utc, first_sample_utc;
+
 
     if (!!err) return callback(err);
 
-    var f = function(id) {
-      return function(err, results) {
-        if (!!err) self.logger.error('invoke', { event: 'sync', diagnostic: err.message });
-        else locations[id].samples = results.samples;
-
-        if (--count === 0) callback(null, locations, sensors);
-      };
-    };
-
-    count = 0;
-
-
     sensors = {};
-    for (i = 0; i < results.sensors.length; i++) {
-      sensor = results.sensors[i];
-      sensors[sensor.sensor_serial] = sensor;
-    }
-
-    locations = {};
     for (i = 0; i < results.locations.length; i++) {
-      location = results.locations[i];
-      locations[location.location_identifier] = location;
-
-      count++;
-      last_sample_utc = new Date(location.last_sample_utc);
-      first_sample_utc = new Date(last_sample_utc);
-      first_sample_utc.setUTCDate(first_sample_utc.getUTCDate() - 7);
-      self.roundtrip('GET', '/sensor_data/v3/sample/location/' + location.location_identifier
-      + '?from_datetime_utc=' + first_sample_utc.toISOString() + '&to_datetime_utc=' + last_sample_utc.toISOString(), f(location.location_identifier));
+      sensors[results.locations[i].sensor.system_id] = results.locations[i];
     }
 
-    count++;
-    self.roundtrip('GET', '/sensor_data/v1/garden_locations_status', function(err, results) {
-      var i, id;
-
-      if (!!err) self.logger.error('invoke', { event: 'garden_locations_status', diagnostic: err.message });
-      else {
-        for (i = 0; i < results.locations.length; i++) {
-          location = results.locations[i];
-          id = location.location_identifier;
-          delete(location.location_identifier);
-
-          locations[id].status = location;
-        }
-      }
-
-      if (--count === 0) callback(null, locations, sensors);
-    });
+    callback(null, sensors);
   });
 };
 
@@ -222,7 +183,7 @@ CloudAPI.prototype.invoke = function(method, path, json, callback) {
     };
   }
 
-  options = url.parse('https://apiflowerpower.parrot.com' + path);
+  options = url.parse('https://parrot-hawaii2-valid-api.herokuapp.com' + path);
   options.agent = false;
   options.method = method;
   options.rejectUnauthorized = false;    // self-signed certificate?

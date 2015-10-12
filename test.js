@@ -1,9 +1,9 @@
 var CloudAPI = require('./flower-power-cloud').CloudAPI;
 
-var clientID     = 'parrottest.fpwebservice@gmail.com'
-, clientSecret = 'cvSjfnONllkHLymF2gEUL73PPXJiMMcVCd1VtZaIXHSGyhaT'
-, userName     = 'parrottest.fpwebservice@gmail.com'
-, passPhrase   = 'Parrot2015FP'
+var clientID     = 'bruno.sautron@parrot.com'
+, clientSecret = 'C91omlFgZeug8RmuWhv2Ah1VefBFtGqCBmOvZbWZT1k0cM1I'
+, userName     = 'bruno.sautron@parrot.com'
+, passPhrase   = 'valerie974'
 , api
 ;
 
@@ -15,10 +15,9 @@ api = new CloudAPI({
 api.login(userName, passPhrase, function(err) {
 	if (!!err) return console.log('login error: ' + err.message);
 
-	api.getGarden(function(err, plants, sensors) {
+	api.getGarden(function(err, sensors) {
 		if (!!err) return console.log('getGarden: ' + err.message);
 
-		console.log('plants:'); console.log(plants);
 		console.log('sensors:'); console.log(sensors);
 	});
 });
