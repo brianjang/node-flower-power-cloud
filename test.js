@@ -1,9 +1,9 @@
 var CloudAPI = require('./flower-power-cloud').CloudAPI;
 
-var clientID     = 'bruno.sautron@parrot.com'
-, clientSecret = 'C91omlFgZeug8RmuWhv2Ah1VefBFtGqCBmOvZbWZT1k0cM1I'
-, userName     = 'bruno.sautron@parrot.com'
-, passPhrase   = 'valerie974'
+var clientID     = '...'
+, clientSecret = '...'
+, userName     = '...'
+, passPhrase   = '...'
 , api
 ;
 
