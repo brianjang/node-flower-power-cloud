@@ -172,15 +172,15 @@ CloudAPI.prototype.getUserConfig = function(callback) {
   });
 }
 
-CloudAPI.prototype.sendHistory = function(param, callback) {
+CloudAPI.prototype.sendSamples = function(parameters, callback) {
   var self = this;
 
-  return self.invoke('PUT', '/sensor_data/v5/sample', JSON.stringify(param), function(err, code, results) {
+  return self.invoke('PUT', '/sensor_data/v5/sample', JSON.stringify(parameters), function(err, code, results) {
     if (err || code > 210) {
       callback(err, results);
     }
     else {
-      callback(err, param.uploads[0].buffer_base64);
+      callback(err, parameters.uploads[0].buffer_base64);
     }
   });
 }
