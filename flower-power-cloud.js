@@ -60,18 +60,18 @@ CloudAPI.prototype.login = function(username, passphrase, callback) {
 
     self.oauth = results;
 
-    /*
-    if (!!self.timer) {
-    clearTimeout(self.timer);
-    delete(self.timer);
-  }
-  if (!!results.expires_in) self.timer = setTimeout(function() { self._refresh(self); }, (results.expires_in - 120) * 1000);
-  */
 
-  callback(null);
-});
+    //   if (!!self.timer) {
+    //   clearTimeout(self.timer);
+    //   delete(self.timer);
+    // }
+    // if (!!results.expires_in) self.timer = setTimeout(function() { self._refresh(self); }, (results.expires_in - 120) * 1000);
 
-return self;
+
+    callback(null);
+  });
+
+  return self;
 };
 
 CloudAPI.prototype._refresh = function(self, callback) {
