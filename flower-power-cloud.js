@@ -51,7 +51,7 @@ CloudAPI.prototype.login = function(username, passphrase, callback) {
     , client_id           : self.options.clientID
     , grant_type          : 'password'
     , app_identifier      : ""
-	  , notification_token  : ""
+    , notification_token  : ""
   };
   self.invoke('POST', '/user/v3/authenticate', json, function(err, code, results) {
     if (!!err) callback(err);
@@ -117,7 +117,9 @@ CloudAPI.prototype.getGarden = function(callback) {
         var configuration = {};
 
         for (var i = 0; i < results.locations.length; i++) {
-          configuration[results.locations[i].sensor.sensor_identifier] = results.locations[i];
+          if (results.locations[i].sensor) {
+            configuration[results.locations[i].sensor.sensor_identifier] = results.locations[i];
+          }
         }
         callback(err, configuration);
       });
@@ -127,7 +129,9 @@ CloudAPI.prototype.getGarden = function(callback) {
         var status = {};
 
         for (var i = 0; i < results.locations.length; i++) {
-          status[results.locations[i].sensor.sensor_identifier] = results.locations[i];
+          if (results.locations[i].sensor) {
+            status[results.locations[i].sensor.sensor_identifier] = results.locations[i];
+          }
         }
         callback(null, status);
       });
