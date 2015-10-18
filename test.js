@@ -1,15 +1,16 @@
 var CloudAPI = require('./flower-power-cloud').CloudAPI;
 
-var clientID     = '...'
-, clientSecret = '...'
-, userName     = '...'
-, passPhrase   = '...'
-, api
-;
+var	clientID			= '...',
+		clientSecret	= '...',
+		userName			= '...',
+		passPhrase		= '...',
+		url						= '...',
+		api;
 
 api = new CloudAPI({
 	clientID: clientID,
-	clientSecret: clientSecret
+	clientSecret: clientSecret,
+	url: url
 });
 
 api.login(userName, passPhrase, function(err) {

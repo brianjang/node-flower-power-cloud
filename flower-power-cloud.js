@@ -111,9 +111,11 @@ CloudAPI.prototype._refresh = function(self, callback) {
 CloudAPI.prototype.getGarden = function(callback) {
   var self = this;
 
-  async.series({
+  async.parallel({
     configuration: function(callback) {
       self.invoke('GET', '/garden/v1/configuration', function(err, code, results) {
+        console.log(results);
+        process.exit(0);
         var configuration = {};
 
         for (var i = 0; i < results.locations.length; i++) {
@@ -199,7 +201,7 @@ CloudAPI.prototype.invoke = function(method, path, json, callback) {
     };
   }
 
-  options = url.parse('https://parrot-hawaii2-valid-api.herokuapp.com' + path);
+  options = url.parse(this.options.utl + path);
   options.agent = false;
   options.method = method;
   options.rejectUnauthorized = false;    // self-signed certificate?
