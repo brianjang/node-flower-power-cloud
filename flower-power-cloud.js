@@ -201,7 +201,7 @@ CloudAPI.prototype.invoke = function(method, path, json, callback) {
     };
   }
 
-  options = url.parse(this.options.utl + path);
+  options = url.parse(this.options.url + path);
   options.agent = false;
   options.method = method;
   options.rejectUnauthorized = false;    // self-signed certificate?
