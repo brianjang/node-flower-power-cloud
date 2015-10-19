@@ -18,6 +18,20 @@ var DEFAULT_LOGGER = { error   : function(msg, props) { console.log(msg); if (!!
 , debug   : function(msg, props) { console.log(msg); if (!!props) console.log(props);             }
 };
 
+function concatJson(json1, json2) {
+	var dest = json1;
+
+	for (var key in json2) {
+		if (typeof json1[key] == 'object' && typeof json2[key] == 'object') {
+			dest[key] = concatJson(json1[key], json2[key]);
+		}
+		else {
+			dest[key] = json2[key];
+		}
+	}
+	return dest;
+}
+
 
 var CloudAPI = function(options) {
   var k;
@@ -114,31 +128,20 @@ CloudAPI.prototype.getGarden = function(callback) {
   async.parallel({
     configuration: function(callback) {
       self.invoke('GET', '/garden/v1/configuration', function(err, code, results) {
-
-        var configuration = {};
-
-        for (var i = 0; i < results.locations.length; i++) {
-          if (results.locations[i].sensor) {
-            configuration[results.locations[i].sensor.sensor_identifier] = results.locations[i];
-          }
-        }
-        callback(err, configuration);
+        callback(err, results);
       });
     },
     status: function(callback) {
       self.invoke('GET', '/garden/v1/status', function(err, code, results) {
-        var status = {};
-
-        for (var i = 0; i < results.locations.length; i++) {
-          if (results.locations[i].sensor) {
-            status[results.locations[i].sensor.sensor_identifier] = results.locations[i];
-          }
-        }
-        callback(null, status);
+        callback(err, results);
       });
     }
   }, function(error, results) {
-    callback(error, results);
+
+    if (!error) {
+      callback(null, concatJson(results.status, results.configuration));
+    }
+    else callback(error);
   });
 };
 
