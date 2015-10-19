@@ -114,8 +114,7 @@ CloudAPI.prototype.getGarden = function(callback) {
   async.parallel({
     configuration: function(callback) {
       self.invoke('GET', '/garden/v1/configuration', function(err, code, results) {
-        console.log(results);
-        process.exit(0);
+
         var configuration = {};
 
         for (var i = 0; i < results.locations.length; i++) {
