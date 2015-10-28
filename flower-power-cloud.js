@@ -239,23 +239,27 @@ CloudAPI.prototype.invoke = function(method, path, json, callback) {
 
       try { results = JSON.parse(body); } catch(ex) {
         self.logger.error(path, { event: 'json', diagnostic: ex.message, body: body });
+				response.removeAllListeners();
         return callback(ex, response.statusCode);
       }
 
       if (expected.indexOf(response.statusCode) === -1) {
         self.logger.error(path, { event: 'https', code: response.statusCode, body: body });
+				response.removeAllListeners();
         return callback(new Error('HTTP response ' + response.statusCode), response.statusCode, results);
       }
-      response.removeAllListeners('close');
+      response.removeAllListeners();
       callback(null, response.statusCode, results);
     });
     response.on('close', function() {
+			response.removeAllListeners();
       callback(new Error('premature end-of-file'));
     });
     response.setEncoding('utf8');
   });
 
   req.on('error', function(err) {
+		response.removeAllListeners();
     callback(err);
   });
   req.end(json);
