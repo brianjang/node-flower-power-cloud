@@ -259,7 +259,6 @@ CloudAPI.prototype.invoke = function(method, path, json, callback) {
   });
 
   req.on('error', function(err) {
-		response.removeAllListeners();
     callback(err);
   });
   req.end(json);
