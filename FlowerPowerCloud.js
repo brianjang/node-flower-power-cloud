@@ -8,7 +8,7 @@ let content = {
   'urlencoded': 'application/x-www-form-urlencoded'
 };
 
-export default class FlowerPowerApi {
+export default class FlowerPowerCloud {
   constructor() {
     this._token = {};
 
@@ -34,7 +34,7 @@ export default class FlowerPowerApi {
         let body = qs.stringify(data);
         let options = {};
 
-        options.url = Api.url + req.path,
+        options.url = FlowerPowerCloud.url + req.path,
         options.method = req.method.split('/')[0];
         options.body = (!!data) ? body : "",
         options.json = true;
@@ -60,4 +60,4 @@ export default class FlowerPowerApi {
   }
 };
 
-Api.url = 'https://apiflowerpower.parrot.com';
+FlowerPowerCloud.url = 'https://apiflowerpower.parrot.com';
