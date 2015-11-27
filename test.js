@@ -1,26 +1,21 @@
-var CloudAPI = require('./flower-power-cloud').CloudAPI;
+var FlowerPowerCloud = require('./FlowerPowerCloud');
 
-var	clientID			= '...',
-		clientSecret	= '...',
-		userName			= '...',
-		passPhrase		= '...',
-		url						= '...',
-		api;
+var api = new FlowerPowerCloud();
+var credentials = {
+	"grant_type": "",
+	"client_id": "",
+	"client_secret": "",
+	"username": "",
+	"password": "",
+	"app_identifier": ""
+};
 
-api = new CloudAPI({
-	clientID: clientID,
-	clientSecret: clientSecret,
-	url: url
+api.login(credentials, function(err, res) {
+	if (err) console.log(err.toString());
+	else {
+		api.getGarden(function(err, res) {
+			console.log(err);
+			console.log(res);
+		});
+	}
 });
-
-api.login(userName, passPhrase, function(err) {
-	if (!!err) return console.log('login error: ' + err.message);
-
-	api.getGarden(function(err, sensors) {
-		if (!!err) return console.log('getGarden: ' + err.message);
-
-		console.log('sensors:'); console.log(sensors);
-	});
-});
-
-api.on('error', function(err) { console.log('background error: ' + err.message); });

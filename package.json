@@ -1,6 +1,6 @@
 {
   "name": "flower-power-cloud",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "description": "A node.js module to interface with the cloud service for the Parrot Flower Power",
   "author": {
     "name": "Marshall Rose",
@@ -23,6 +23,8 @@
   },
   "readmeFilename": "README.md",
   "dependencies": {
-    "async": "^1.4.2"
+    "async": "^1.4.2",
+    "cli-color": "^1.1.0",
+    "request": "^2.67.0"
   }
 }
