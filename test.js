@@ -8,7 +8,6 @@ var credential = {
       	'password'	: "Parrot2015FP",
       	'client_id'	: "parrottest.fpwebservice@gmail.com",
       	'client_secret'	: "cvSjfnONllkHLymF2gEUL73PPXJiMMcVCd1VtZaIXHSGyhaT",
-      	'grant_type'	: 'password',
       };
 
 bruno.login(credential, function(err, res) {
