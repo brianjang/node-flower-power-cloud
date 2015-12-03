@@ -1,26 +1,20 @@
-var CloudAPI = require('./flower-power-cloud').CloudAPI;
+var FlowerPowerCloud = require('./FlowerPowerCloud');
+var async = require('async');
 
-var clientID     = 'parrottest.fpwebservice@gmail.com'
-, clientSecret = 'cvSjfnONllkHLymF2gEUL73PPXJiMMcVCd1VtZaIXHSGyhaT'
-, userName     = 'parrottest.fpwebservice@gmail.com'
-, passPhrase   = 'Parrot2015FP'
-, api
-;
+var bruno = new FlowerPowerCloud();
 
-api = new CloudAPI({
-	clientID: clientID,
-	clientSecret: clientSecret
+var credential = {
+      	'username'	: "parrottest.fpwebservice@gmail.com",
+      	'password'	: "Parrot2015FP",
+      	'client_id'	: "parrottest.fpwebservice@gmail.com",
+      	'client_secret'	: "cvSjfnONllkHLymF2gEUL73PPXJiMMcVCd1VtZaIXHSGyhaT",
+      };
+
+bruno.login(credential, function(err, res) {
+	if (err) console.log(err);
+	else {
+		bruno.getGarden(function(err, res) {
+			console.log(res);
+		});
+	}
 });
-
-api.login(userName, passPhrase, function(err) {
-	if (!!err) return console.log('login error: ' + err.message);
-
-	api.getGarden(function(err, plants, sensors) {
-		if (!!err) return console.log('getGarden: ' + err.message);
-
-		console.log('plants:'); console.log(plants);
-		console.log('sensors:'); console.log(sensors);
-	});
-});
-
-api.on('error', function(err) { console.log('background error: ' + err.message); });
