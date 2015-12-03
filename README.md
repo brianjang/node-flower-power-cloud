@@ -16,45 +16,40 @@ launch the [iOS](https://itunes.apple.com/us/app/apple-store/id712479884), and f
 (Apparently there isn't an Android app yet).
 
 
-Install
--------
-
-    npm install flower-power-cloud
-
 API
 ---
 
 ### Load
-
-    var CloudAPI = require('flower-power-cloud');
+```js
+var FlowerPowerCloud = require('./FlowerPowerCloud');
+var api = new FlowerPowerCloud();
+```
 
 ### Login to cloud
-
-    var clientID     = '...'
-      , clientSecret = '...'
-      , userName     = '...'
-      , passPhrase   = '...'
-      , api
-      ;
-
-    api = new CloudAPI.CloudAPI({ clientID     : clientID
-                                , clientSecret : clientSecret }).login(userName, passPhrase, function(err) {
-      if (!!err) return console.log('login error: ' + err.message);
-
-      // otherwise, good to go!
-    }).on('error', function(err) {
-      console.log('background error: ' + err.message);
-    });
+```js
+var credential = {
+      	'username'	: "parrottest.fpwebservice@gmail.com",
+      	'password'	: "Parrot2015FP",
+      	'client_id'	: "parrottest.fpwebservice@gmail.com",
+      	'client_secret'	: "cvSjfnONllkHLymF2gEUL73PPXJiMMcVCd1VtZaIXHSGyhaT",
+};
+api.login(credential, function(err, res) {
+    if (err) console.log(err);
+    else {
+        // Head in the clouds :)
+    }
+});
+```
 
 ### Get garden information
-
-    flower-power-cloud.getGarden(function(err, plants, sensors) {
-      if (!!err) return console.log('getGarden: ' + err.message);
-
-      // inspect plants{} and sensors{}
+```js
+api.getGarden(function(err, garden) {
+    if (err) console.log(err);
+    else {
+        // Beautiful flowers!
     }
+});
 
-Finally
 -------
 
 Enjoy!
