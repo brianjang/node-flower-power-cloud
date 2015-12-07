@@ -4,7 +4,7 @@ var qs = require('querystring');
 var clc = require('cli-color');
 var schedule = require('node-schedule');
 
-var DEBUG = true;
+var DEBUG = false;
 
 function FlowerPowerCloud() {
 	this._token = {};
@@ -123,10 +123,8 @@ FlowerPowerCloud.prototype.login = function(data, callback) {
 FlowerPowerCloud.prototype.getToken = function(token, callback) {
 	var self = this;
 
-	console.log(token);
 	self._token = token;
 	self._isLogged = true;
-	console.log(token['expires_in'] * 1000);
 	var job = new schedule.Job(function() {
 		self.refresh(token);
 	});
