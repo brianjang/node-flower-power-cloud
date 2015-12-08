@@ -2,53 +2,35 @@ var ApiError = require('./ApiError');
 var request = require('request');
 var qs = require('querystring');
 var clc = require('cli-color');
+var schedule = require('node-schedule');
 
 var DEBUG = false;
 
 function FlowerPowerCloud() {
-		this._token = {};
-		this._isLogged = false;
+	this._token = {};
+	this._isLogged = false;
+	this.credentials = {};
 
-		var api = {
-			'getGarden': {method: 'GET/json', path: "/sensor_data/v4/garden_locations_status", auth: true},
-			'getProfile': {method: 'GET/json', path: "/user/v4/profile", auth: true},
-			'sendSamples': {method: 'PUT/json', path: '/sensor_data/v5/sample',  auth: true}
-		};
-		var self = this;
+	var self = this;
+	var api = {
+		'getGarden': {method: 'GET/json', path: '/sensor_data/v4/garden_locations_status', auth: true},
+		'getProfile': {method: 'GET/json', path: '/user/v4/profile', auth: true},
+		'sendSamples': {method: 'PUT/json', path: '/sensor_data/v5/sample', auth: true}
+	};
 
-		for (var item in api) {
-			self.makeReqFunction(api[item], item);
-		}
-		return this;
+	for (var item in api) {
+		self.makeReqFunction(item, api[item]);
+	}
+	return this;
 };
 
 FlowerPowerCloud.url = 'https://apiflowerpower.parrot.com';
 
-FlowerPowerCloud.prototype.makeReqFunction = function (req, name) {
+FlowerPowerCloud.prototype.makeReqFunction = function(name, req) {
 	var self = this;
 
 	FlowerPowerCloud.prototype[name] = function(data, callback) {
-		var options = {};
-
-		if (typeof data == 'function') {
-			callback = data;
-			data = null;
-		}
-
-		req = self.makeUrl(req, data);
-		options = self.makeHeader(req, data);
-
-		if (DEBUG) console.log(options);
-		request(options, function(err, res, body) {
-			if (err) callback(err);
-			else if (res.statusCode != 200 || (typeof body.errors != 'undefined' && body.errors.length > 0)) {
-				return callback(new ApiError(res.statusCode, JSON.parse(body)));
-			}
-			else if (callback) {
-				return callback(null, JSON.parse(body));
-			}
-			else throw "Give me a callback";
-		});
+		self.invoke(req, data, callback);
 	};
 };
 
@@ -99,33 +81,73 @@ FlowerPowerCloud.prototype.loggerReq = function(req, data) {
 	}
 };
 
-FlowerPowerCloud.prototype.login = function(data, callback) {
-	var req = {method: 'POST/urlencoded', path: '/user/v2/authenticate'};
-	var self  = this;
+FlowerPowerCloud.prototype.invoke = function(req, data, callback) {
 	var options = {};
-	
-	data['grant_type'] = 'password';
+	var self = this;
+
 	if (typeof data == 'function') {
 		callback = data;
 		data = null;
 	}
-
 	req = self.makeUrl(req, data);
 	options = self.makeHeader(req, data);
 
 	if (DEBUG) console.log(options);
 	request(options, function(err, res, body) {
 		if (err) callback(err);
-		else if (res.statusCode != 200 || (typeof body.errors != 'undefined' && body.errors.length > 0)) {
-			return callback(new ApiError(res.statusCode, null));
+		else if (res.statusCode != 200 || (typeof body.errors != 'undefined' && body.errors.length > 0)) { var errorContent = null;
+
+			if (typeof body == 'object') errorContent = JSON.parse(body);
+			else errorContent = body;
+			return callback(new ApiError(res.statusCode, errorContent));
 		}
 		else if (callback) {
-			self._token = JSON.parse(body);
-			self._isLogged = true;
 			return callback(null, JSON.parse(body));
 		}
 		else throw "Give me a callback";
 	});
 };
+
+FlowerPowerCloud.prototype.login = function(data, callback) {
+	var req = {method: 'POST/urlencoded', path: '/user/v2/authenticate'};
+	var self = this;
+
+	self.credentials = data;
+	data['grant_type'] = 'password';
+	self.invoke(req, data, function(err, res) {
+		if (err) callback(err);
+		else self.getToken(res, callback);
+	});
+};
+
+FlowerPowerCloud.prototype.getToken = function(token, callback) {
+	var self = this;
+
+	self._token = token;
+	self._isLogged = true;
+	var job = new schedule.Job(function() {
+		self.refresh(token);
+	});
+	job.schedule(new Date(Date.now() + (token['expires_in'] - 1440) * 1000));
+	if (typeof callback != 'undefined') callback(null, token);
+}
+
+FlowerPowerCloud.prototype.refresh = function(token) {
+	var req = {method: 'POST/urlencoded', path: '/user/v2/authenticate'};
+	var self = this;
+
+	var data = {
+		'client_id':	self.credentials['client_id'],
+		'client_secret': self.credentials['client_secret'],
+		'refresh_token': token.refresh_token,
+		'grant_type': 'refresh_token'
+	};
+
+	self.invoke(req, data, function(err, res) {
+		if (err) callback(err);
+		else self.getToken(res);
+	});
+};
+
 
 module.exports = FlowerPowerCloud;
