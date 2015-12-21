@@ -15,10 +15,11 @@ function FlowerPowerCloud(url) {
 
 	var self = this;
 	var api = {
-		'getSyncGarden': {method: 'GET/json', path: '/sensor_data/v4/garden_locations_status', auth: true},
-		'getProfile': {method: 'GET/json', path: '/user/v4/profile', auth: true},
-		'sendSamples': {method: 'PUT/json', path: '/sensor_data/v5/sample', auth: true},
-		'getSyncData': {method: 'GET/json', path: '/sensor_data/v3/sync', auth: true}
+		'getProfile': {method: 'GET/urlencoded', path: "/user/v4/profile", auth: true},
+		'getGardenConfig': {method: 'GET/urlencoded', path: "/garden/v2/configuration", auth: true},
+		'getGardenStatus': {method: 'GET/urlencoded', path: "/garden/v1/status", auth: true},
+		'sendGardenStatus': {method: 'PUT/json', path: "/garden/v1/status", auth: true},
+		'sendSamples': {method: 'PUT/json', path: '/sensor_data/v8/sample', auth: true}
 	};
 
 	for (var item in api) {
