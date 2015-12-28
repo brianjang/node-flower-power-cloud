@@ -87,6 +87,7 @@ FlowerPowerCloud.prototype.invoke = function(req, data, callback) {
 	var options = {};
 	var self = this;
 
+
 	if (typeof data == 'function') {
 		callback = data;
 		data = null;
@@ -106,22 +107,26 @@ FlowerPowerCloud.prototype.invoke = function(req, data, callback) {
 		else if (callback) {
 			var results = JSON.parse(body);
 
+
 			if (typeof results.sensors != 'undefined') {
 				var sensors = {};
 				for (var i = 0; i < results.sensors.length; i++) {
-					sensors[results.sensors[i].sensor_serial] = results.sensors[i];
+					sensors[results.sensors[i].sensor.sensor_identifier] = results.sensors[i];
 				}
 				results.sensors = sensors;
 			}
 			if (typeof results.locations != 'undefined') {
 				var locations = {};
 				for (var i = 0; i < results.locations.length; i++) {
-					locations[results.locations[i].sensor_serial] = results.locations[i];
+					locations[results.locations[i].sensor.sensor_identifier] = results.locations[i];
 				}
 				results.locations = locations;
 			}
 			if (typeof results.locations != 'undefinded' && typeof results.sensors != 'undefined') {
 				results.sensors = self.concatJson(results.sensors, results.locations);
+			}
+			if (typeof results.locations != 'undefined') {
+				results.sensors = results.locations;
 				delete results.locations;
 			}
 			return callback(null, results);
@@ -198,19 +203,7 @@ FlowerPowerCloud.prototype.getGarden = function(callback) {
 			self.getGardenStatus(callback);
 		}
 	}, function(error, results) {
-		if (!error) {
-			var sensors = {};
-			results = self.concatJson(results.status, results.configuration);
-
-			for (var i in results.locations) {
-				if (results.locations[i].sensor) {
-					sensors[results.locations[i].sensor.sensor_identifier] = results.locations[i];
-				}
-			}
-			delete results.locations;
-			results.sensors = sensors;
-			callback(null, results);
-		}
+		if (!error) callback(null, self.concatJson(results.status, results.configuration));
 		else callback(error);
 	});
 }
