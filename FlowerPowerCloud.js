@@ -23,7 +23,7 @@ function FlowerPowerCloud(url) {
 	};
 
 	for (var item in api) {
-		self.makeReqFunction(api[item], item);
+		self.makeReqFunction(item, api[item]);
 	}
 	return this;
 }
@@ -120,8 +120,10 @@ FlowerPowerCloud.prototype.invoke = function(req, data, callback) {
 				}
 				results.locations = locations;
 			}
-			results.sensors = self.concatJson(results.sensors, results.locations);
-			delete results.locations;
+			if (typeof results.locations != 'undefinded' && typeof results.sensors != 'undefined') {
+				results.sensors = self.concatJson(results.sensors, results.locations);
+				delete results.locations;
+			}
 			return callback(null, results);
 		}
 		else throw "Give me a callback";
@@ -198,7 +200,7 @@ FlowerPowerCloud.prototype.getGarden = function(callback) {
 	}, function(error, results) {
 		if (!error) {
 			var sensors = {};
-			results = concatJson(results.status, results.configuration);
+			results = self.concatJson(results.status, results.configuration);
 
 			for (var i in results.locations) {
 				if (results.locations[i].sensor) {
