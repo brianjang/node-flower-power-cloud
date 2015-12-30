@@ -1,20 +1,21 @@
-var FlowerPowerCloud = require('./FlowerPowerCloud');
-var async = require('async');
+import FlowerPowerCloud from './FlowerPowerCloud';
 
-var api = new FlowerPowerCloud();
+let async = require('async');
 
-var credential = {
+let api = new FlowerPowerCloud();
+
+let credentials = {
 	'username'		: "...",
 	'password'		: "...",
 	'client_id'		: "...",
 	'client_secret'	: "...",
+	'auto-refresh'	: false
 };
 
-api.login(credential, function(err, res) {
-	if (err) console.log(err.toString());
-	else {
-		api.getGarden(function(err, res) {
-			console.log(res);
-		});
-	}
+api.login(credentials).then((res) => {
+	return api.getGarden({});
+}).then(res => {
+	console.log(res);
+}).catch(err => {
+	console.error(err);
 });
