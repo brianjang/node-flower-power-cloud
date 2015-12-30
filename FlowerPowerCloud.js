@@ -1,206 +1,190 @@
-var ApiError = require('./ApiError');
-var async = require('async');
-var request = require('request');
-var qs = require('querystring');
-var clc = require('cli-color');
-var schedule = require('node-schedule');
+import ApiError from './ApiError';
+let async = require('async');
+let request = require('request');
+let qs = require('querystring');
+let clc = require('cli-color');
+let schedule = require('node-schedule');
 
-var DEBUG = false;
+const DEBUG = true;
+const URL = 'https://apiflowerpower.parrot.com';
 
-function FlowerPowerCloud() {
-	this._token = {};
-	this._isLogged = false;
-	this.credentials = {};
+export default class FlowerPowerCloud {
+	constructor() {
+		this._token = {};
+		this._isLogged = false;
+		this.credentials = {};
+		this.autoRefresh = false;
 
-	var self = this;
-	var api = {
-		'getSyncGarden': {method: 'GET/json', path: '/sensor_data/v4/garden_locations_status', auth: true},
-		'getProfile': {method: 'GET/json', path: '/user/v4/profile', auth: true},
-		'sendSamples': {method: 'PUT/json', path: '/sensor_data/v5/sample', auth: true},
-		'getSyncData': {method: 'GET/json', path: '/sensor_data/v3/sync', auth: true}
-	};
+		let methods = {
+			'getSyncGarden': {method: 'GET/json', path: '/sensor_data/v4/garden_locations_status', auth: true},
+			'getProfile': {method: 'GET/json', path: '/user/v4/profile', auth: true},
+			'sendSamples': {method: 'PUT/json', path: '/sensor_data/v5/sample', auth: true},
+			'getSyncData': {method: 'GET/json', path: '/sensor_data/v3/sync', auth: true}
+		};
 
-	for (var item in api) {
-		self.makeReqFunction(item, api[item]);
+		for (let name in methods) {
+			this[name] = data => this.invoke(methods[name], data);
+		}
+		return (this);
 	}
-	return this;
-};
 
-FlowerPowerCloud.url = 'https://apiflowerpower.parrot.com';
+	get token() {
+		return (this._token);
+	}
 
-FlowerPowerCloud.prototype.makeReqFunction = function(name, req) {
-	var self = this;
+	get isLogged() {
+		return (this._isLogged);
+	}
 
-	FlowerPowerCloud.prototype[name] = function(data, callback) {
-		self.invoke(req, data, callback);
-	};
-};
+	loggerReq(req, url, data) {
+		console.log(clc.yellow(req.method), clc.green(url));
+		for (var key in data) {
+			console.log(clc.xterm(45)(clc.underline(key + ":"), data[key]));
+		}
+	}
+	makeUrl(path, uri) {
+		// /.../:arg1/:arg2
+		return (URL + path);
+	}
 
-FlowerPowerCloud.prototype.makeHeader = function(req, data) {
-	var options = {headers: {}};
-	var verb = req.method.split('/')[0];
-	var type = req.method.split('/')[1];
+	makeHeader(method, url, param) {
+		let options = {headers: {}};
+		let verb = method.method.split('/')[0];
+		let type = method.method.split('/')[1];
 
-	switch (type) {
-		case 'urlencoded':
-			options.body = qs.stringify(data);
+		switch (type) {
+			case 'urlencoded':
+			options.body = qs.stringify(param);
 			options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
 			break;
-		case 'json':
-			options.body = JSON.stringify(data);
+			case 'json':
+			options.body = JSON.stringify(param);
 			options.headers['Content-Type'] = 'application/json';
 			break;
-		default:
-			options.body = data;
+			default:
+			options.body = param;
 			options.headers['Content-Type'] = 'text/plain';
 			break;
-	}
-
-	options.url = FlowerPowerCloud.url + req.path;
-	options.method = verb;
-	options.headers['Authorization'] = (req.auth) ? "Bearer " + this._token.access_token : "";
-
-	return options;
-};
-
-FlowerPowerCloud.prototype.makeUrl = function(req, data) {
-	var self = this;
-
-	if (data) {
-		for (var item in data.url) {
-			req.path = req.path.replace(':' + item, data.url[item]);
 		}
-		delete data.url;
+
+		options.url = url;
+		options.method = verb;
+		options.headers['Authorization'] = (method.auth) ? "Bearer " + this._token.access_token : "";
+
+		return (options);
 	}
-	if (DEBUG) self.loggerReq(req, data);
-	return req;
-};
 
-FlowerPowerCloud.prototype.loggerReq = function(req, data) {
-	console.log(clc.yellow(req.method), clc.green(req.path));
-	for (var key in data) {
-		console.log(clc.xterm(45)(clc.underline(key + ":"), data[key]));
-	}
-};
+	concatJson(json1, json2) {
+		let dest = json1;
 
-FlowerPowerCloud.prototype.invoke = function(req, data, callback) {
-	var options = {};
-	var self = this;
-
-	if (typeof data == 'function') {
-		callback = data;
-		data = null;
-	}
-	req = self.makeUrl(req, data);
-	options = self.makeHeader(req, data);
-
-	if (DEBUG) console.log(options);
-	request(options, function(err, res, body) {
-		if (typeof body == 'string') body = JSON.parse(body);
-		if (err) callback(err, null);
-		else if (res.statusCode != 200 || (body.errors && body.errors.length > 0)) {
-			return callback(new ApiError(res.statusCode, body), null);
+		for (let key in json2) {
+			if (typeof json1[key] == 'object' && typeof json2[key] == 'object') {
+				dest[key] = this.concatJson(json1[key], json2[key]);
+			}
+			else {
+				dest[key] = json2[key];
+			}
 		}
-		else if (callback) {
-			var results = body;
+		return dest;
+	}
 
-			if (typeof results.sensors != 'undefined') {
-				var sensors = {};
-				for (var i = 0; i < results.sensors.length; i++) {
-					if (typeof results.sensors[i].sensor_serial != 'undefined' && results.sensors[i].sensor_serial) {
-						sensors[results.sensors[i].sensor_serial] = results.sensors[i];
+	invoke(method, {uri, param}) {
+		return new Promise((resolve, reject) => {
+			let url = this.makeUrl(method.path, uri);
+			let options = this.makeHeader(method, url, param);
+
+			if (DEBUG) this.loggerReq(method, url, options);
+			request(options, (err, res, body) => {
+				if (err) reject(err);
+				else {
+					if (typeof body == 'string') body = JSON.parse(body);
+					if (res.statusCode != 200 || (body.errors && body.errors.length > 0)) {
+						reject(new ApiError(res.statusCode, body), null);
+					}
+					else {
+						let results = body;
+
+						if (results.sensors) {
+							let sensors = {};
+							for (let sensor of results.sensors) {
+								if (sensor.sensor_serial) sensors[sensor.sensor_serial] = sensor;
+							}
+							results.sensors = sensors;
+						}
+						if (results.locations) {
+							let locations = {};
+							for (let location of results.locations) {
+								if (location.sensor_serial) locations[location.sensor_serial] = location;
+							}
+							results.locations = locations;
+						}
+						if (results.sensors && results.locations) {
+							results.sensors = this.concatJson(results.sensors, results.locations);
+							delete results.locations;
+						}
+						resolve(results);
 					}
 				}
-				results.sensors = sensors;
-			}
-			if (typeof results.locations != 'undefined') {
-				var locations = {};
-				for (var i = 0; i < results.locations.length; i++) {
-					if (typeof results.locations[i].sensor_serial != 'undefined' && results.locations[i].sensor_serial) {
-						locations[results.locations[i].sensor_serial] = results.locations[i];
-					}
-				}
-				results.locations = locations;
-			}
-			results.sensors = self.concatJson(results.sensors, results.locations);
-			delete results.locations;
-			return callback(null, results);
-		}
-		else throw "Give me a callback";
-	});
-};
+			});
+		});
+	}
 
-FlowerPowerCloud.prototype.login = function(data, callback) {
-	var req = {method: 'POST/urlencoded', path: '/user/v2/authenticate'};
-	var self = this;
+	setToken(token) {
+		this._token = token;
+		this._isLogged = true;
 
-	self.credentials = data;
-	data['grant_type'] = 'password';
-	self.invoke(req, data, function(err, res) {
-		if (err) callback(err);
-		else self.getToken(res, callback);
-	});
-};
-
-FlowerPowerCloud.prototype.getToken = function(token, callback) {
-	var self = this;
-
-	self._token = token;
-	self._isLogged = true;
-	var job = new schedule.Job(function() {
-		self.refresh(token);
-	});
-	job.schedule(new Date(Date.now() + (token['expires_in'] - 1440) * 1000));
-	if (typeof callback != 'undefined') callback(null, token);
-}
-
-FlowerPowerCloud.prototype.refresh = function(token) {
-	var req = {method: 'POST/urlencoded', path: '/user/v2/authenticate'};
-	var self = this;
-
-	var data = {
-		'client_id':	self.credentials['client_id'],
-		'client_secret': self.credentials['client_secret'],
-		'refresh_token': token.refresh_token,
-		'grant_type': 'refresh_token'
-	};
-
-	self.invoke(req, data, function(err, res) {
-		if (err) callback(err);
-		else self.getToken(res);
-	});
-};
-
-FlowerPowerCloud.prototype.getGarden = function(callback) {
-	var self = this;
-
-	async.parallel({
-		syncGarden: function(callback) {
-			self.getSyncGarden(callback);
-		},
-		syncData: function(callback) {
-			self.getSyncData(callback);
-		}
-	}, function(err, res) {
-		if (err) callback(err);
-		else callback(null, self.concatJson(res.syncData, res.syncGarden));
-	});
-};
-
-FlowerPowerCloud.prototype.concatJson = function(json1, json2) {
-	var dest = json1;
-	var self = this;
-
-	for (var key in json2) {
-		if (typeof json1[key] == 'object' && typeof json2[key] == 'object') {
-			dest[key] = self.concatJson(json1[key], json2[key]);
-		}
-		else {
-			dest[key] = json2[key];
+		if (this.autoRefresh) {
+			let job = new schedule.Job(() => {
+				this.refresh(token);
+			});
+			job.schedule(new Date(Date.now() + (token['expires_in'] - 1440) * 1000));
 		}
 	}
-	return dest;
+
+	refresh(token) {
+		let req = {method: 'POST/urlencoded', path: '/user/v2/authenticate'};
+
+		let data = {
+			'client_id':	this.credentials['client_id'],
+			'client_secret': this.credentials['client_secret'],
+			'refresh_token': token.refresh_token,
+			'grant_type': 'refresh_token'
+		};
+		this.invoke(req, {param: data}).then(token => {
+			this.setToken(token);
+		});
+	}
+
+	login(data) {
+		return new Promise((resolve, reject) => {
+			let req = {method: 'POST/urlencoded', path: '/user/v2/authenticate'};
+
+			if (data['auto-refresh']) {
+				this.autoRefresh = data['auto-refresh'];
+				delete data['auto-refresh'];
+			}
+
+			this.credentials = data;
+			data['grant_type'] = 'password';
+			this.invoke(req, {param: data}).then(token => {
+				this.setToken(token);
+				resolve(token);
+			}).catch(err => {
+				reject(err);
+			});
+		});
+	}
+
+	getGarden(data) {
+		return new Promise((resolve, reject) => {
+			Promise.all([
+				this.getSyncData({}),
+				this.getSyncGarden({})
+			]).then(res => {
+				resolve(this.concatJson(res[0], res[1]));
+			}).catch(err => {
+				reject(err);
+			});
+		});
+	}
 }
-
-
-module.exports = FlowerPowerCloud;
