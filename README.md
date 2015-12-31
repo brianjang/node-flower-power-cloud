@@ -1,5 +1,8 @@
 # flower-power-api
 
+[![NPM](https://nodei.co/npm/flower-power-api.png)](https://nodei.co/npm/flower-power-api/)    
+
+
 A node.js module to interface with the [cloud service](https://github.com/parrot-flower-power/parrot-flower-power-api-example)
 for the Parrot [Flower Power](http://www.parrot.com/flowerpower/).
 
