@@ -1,80 +1,63 @@
-flower-power-api
-=======================
+# flower-power-api
 
 A node.js module to interface with the [cloud service](https://github.com/parrot-flower-power/parrot-flower-power-api-example)
 for the Parrot [Flower Power](http://www.parrot.com/flowerpower/).
 
+## Get your access API
+* `username` `password`
+	* Make sure you have an account created by your smartphone. You should be see your garden: [myflowerpower.parrot.com](https://myflowerpower.parrot.com).
+* `client_id` `client_secret`
+	* [Sign up to API here](https://apiflowerpower.parrot.com/api_access/signup), and got by **email** your *Access ID* (`client_id`) and your *Access secret* (`client_secret`).
 
-Before Starting
----------------
-You will need OAuth tokens and a Flower Power account:
-
-- To get the OAuth tokens, use this [form](https://apiflowerpower.parrot.com/api_access/signup)
-
-- To get a Flower power account,
-launch the [iOS](https://itunes.apple.com/us/app/apple-store/id712479884), and follow the directions to create an account.
-(Apparently there isn't an Android app yet).
-
-API
----
-
-### Install
-```bash
-$ npm install flower-power-api
-```
-
+## API
 ### Load
 ```js
-var FlowerPowerApi = require('flower-power-api');
-var api = new FlowerPowerApi();
+import FlowerPowerCloud from './FlowerPowerCloud'
+let api = new FlowerPowerCloud();
 ```
 
 ### Login to cloud
 ```js
-var credential = {
+let credential = {
 	'username'		: "...",
 	'password'		: "...",
 	'client_id'		: "...",
 	'client_secret'	: "...",
+	'auto-refresh'  : false
 };
 
-api.login(credential, function(err, res) {
-	if (err) console.log(err);
-	else {
-		// Head in the clouds :)
-	}
+api.login(credential).then(res => {
+    return api.getGarden({});
+}).then(res => {
+    console.log(res);
+}).catch(err => {
+    console.error(err);
 });
 ```
 
-### Get garden configuration
-```js
-api.getGarden(function(error, garden));
-```
-
 ### Communicate with Cloud
-Every method have the sema pattern:
+Every method have the same pattern:
 ```js
-api.methodName([data,] callback);
-
-typeof data == object // json
-callback == function(error, results);
+let data = {param, uri};
+api.methodName(data)
+    .then(res)
+    .catch(err);
 
 // Call them
-api.getGarden(callback);
-api.getSyncGarden(callback);
-api.getSyncData(callback);
-api.sendSamples(data, callback);
+api.getGarden({});
+api.getSyncGarden({});
+api.getSyncData({});
+api.getProfile({});
+api.sendSamples({param});
 
 // More details into ./FlowerPowerCloud.js
-var api = {
-	'getSyncGarden': {method: 'GET/json', path: '/sensor_data/v4/garden_locations_status', auth: true},
-	'getProfile': {method: 'GET/json', path: '/user/v4/profile', auth: true},
-	'sendSamples': {method: 'PUT/json', path: '/sensor_data/v5/sample', auth: true},
-	'getSyncData': {method: 'GET/json', path: '/sensor_data/v3/sync', auth: true}
+let api = {
+    'getSyncGarden': {method: 'GET/json', path: '/sensor_data/v4/garden_locations_status', auth: true},
+    'getProfile': {method: 'GET/json', path: '/user/v4/profile', auth: true},
+    'sendSamples': {method: 'PUT/json', path: '/sensor_data/v5/sample', auth: true},
+    'getSyncData': {method: 'GET/json', path: '/sensor_data/v3/sync', auth: true}
 };
 ```
 
-Finally
--------
-
+## Finally
 Enjoy!
