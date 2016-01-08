@@ -2,25 +2,33 @@ function ApiError(code, body) {
 	this.code = code;
 	this.errors = [];
 
-	if (typeof body.errors != 'undefined' && body.errors.length > 0) {
+	if (body.errors && body.errors.length > 0) {
 		this.errors = body.errors;
 	}
 	else this.errors.push(body);
+	return (this);
 }
 
-ApiError.prototype = new Error;
+ApiError.prototype = Object.create(Error.prototype);
+ApiError.prototype.constructor = ApiError;
 
 ApiError.prototype.toString = function() {
 	var str = "CODE: " + this.code;
 
-	for (var i = 0; i < this.errors.length; i++) {
+	for (var error of this.errors) {
 		str += "\n";
-		if (typeof this.errors[i].error != '!undefined' && typeof this.errors[i].error_description != 'undefined') {
-			str += this.errors[i].error + ": " + this.errors[i].error_description;
+
+		if (error.error && error.error_description) {
+			str += error.error + ": " + error.error_description;
+		} else if (error.error_code && error.error_message) {
+			str += error.error_code + ": " + error.error_message;
+		} else if (typeof error == 'string') {
+			str += error;
+		} else {
+			var key = Object.keys(error)[0];
+			str += key + ": " + error[key];
 		}
-		else {
-			str += this.errors[i].error_code + ": " + this.errors[i].error_message;
-		}
+		
 	}
 	return (str);
 }

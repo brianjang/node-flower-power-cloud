@@ -2,16 +2,16 @@ var ApiError = require('./ApiError');
 var async = require('async');
 var request = require('request');
 var qs = require('querystring');
-var clc = require('cli-color');
 var schedule = require('node-schedule');
 
-var DEBUG = false;
+const DEBUG = true;
 
 function FlowerPowerCloud(url) {
 	this.url = url;
 	this._token = {};
 	this._isLogged = false;
 	this.credentials = {};
+	this.autoRefresh = false;
 
 	var self = this;
 	var api = {
@@ -77,16 +77,15 @@ FlowerPowerCloud.prototype.makeUrl = function(req, data) {
 };
 
 FlowerPowerCloud.prototype.loggerReq = function(req, data) {
-	console.log(clc.yellow(req.method), clc.green(req.path));
+	console.log(req.method, req.path);
 	for (var key in data) {
-		console.log(clc.xterm(45)(clc.underline(key + ":"), data[key]));
+		console.log(key + ":", data[key]);
 	}
 };
 
 FlowerPowerCloud.prototype.invoke = function(req, data, callback) {
 	var options = {};
 	var self = this;
-
 
 	if (typeof data == 'function') {
 		callback = data;
@@ -97,37 +96,26 @@ FlowerPowerCloud.prototype.invoke = function(req, data, callback) {
 
 	if (DEBUG) console.log(options);
 	request(options, function(err, res, body) {
-		if (err) callback(err);
-		else if (res.statusCode != 200 || (typeof body.errors != 'undefined' && body.errors.length > 0)) {
-			var errorContent = null;
-			if (typeof body == 'object') errorContent = JSON.parse(body);
-			else errorContent = body;
-			return callback(new ApiError(res.statusCode, errorContent));
+		if (typeof body == 'string') {
+			try {
+				body = JSON.parse(body);
+			} catch (e) {};
+		}
+		if (err) callback(err, null);
+		else if (res.statusCode != 200 || (body.errors && body.errors.length > 0)) {
+			return callback(new ApiError(res.statusCode, body), null);
 		}
 		else if (callback) {
-			var results = JSON.parse(body);
+			var results = body;
 
-
-			if (typeof results.sensors != 'undefined') {
-				var sensors = {};
-				for (var i = 0; i < results.sensors.length; i++) {
-					sensors[results.sensors[i].sensor.sensor_identifier] = results.sensors[i];
-				}
-				results.sensors = sensors;
-			}
-			if (typeof results.locations != 'undefined') {
+			if (results.locations) {
 				var locations = {};
-				for (var i = 0; i < results.locations.length; i++) {
-					locations[results.locations[i].sensor.sensor_identifier] = results.locations[i];
+				for (var location of results.locations) {
+					if (location.sensor && location.sensor.sensor_identifier) {
+						locations[location.sensor.sensor_identifier] = location;
+					}
 				}
 				results.locations = locations;
-			}
-			if (typeof results.locations != 'undefinded' && typeof results.sensors != 'undefined') {
-				results.sensors = self.concatJson(results.sensors, results.locations);
-			}
-			if (typeof results.locations != 'undefined') {
-				results.sensors = results.locations;
-				delete results.locations;
 			}
 			return callback(null, results);
 		}
@@ -154,26 +142,32 @@ FlowerPowerCloud.prototype.login = function(data, callback) {
 	var req = {method: 'POST/urlencoded', path: '/user/v3/authenticate'};
 	var self = this;
 
+	if (typeof data['auto-refresh'] != 'undefined') {
+		self.autoRefresh = data['auto-refresh'];
+		delete data['auto-refresh'];
+	}
 	self.credentials = data;
 	data['grant_type'] = 'password';
 	data['app_identifier'] = '';
 	self.invoke(req, data, function(err, res) {
 		if (err) callback(err);
-		else self.getToken(res, callback);
+		else self.setToken(res, callback);
 	});
 };
 
-FlowerPowerCloud.prototype.getToken = function(token, callback) {
+FlowerPowerCloud.prototype.setToken = function(token, callback) {
 	var self = this;
 
 	self._token = token;
 	self._isLogged = true;
-	var job = new schedule.Job(function() {
-		self.refresh(token);
-	});
-	job.schedule(new Date(Date.now() + (token['expires_in'] - 1440) * 1000));
-	if (typeof callback != 'undefined') callback(null, token);
-};
+	if (self.autoRefresh) {
+		var job = new schedule.Job(function() {
+			self.refresh(token);
+		});
+		job.schedule(new Date(Date.now() + (token['expires_in'] - 1440) * 1000));
+	}
+	if (typeof callback == 'function') callback(null, token);
+}
 
 FlowerPowerCloud.prototype.refresh = function(token) {
 	var req = {method: 'POST/urlencoded', path: '/user/v2/authenticate'};
@@ -188,7 +182,7 @@ FlowerPowerCloud.prototype.refresh = function(token) {
 
 	self.invoke(req, data, function(err, res) {
 		if (err) callback(err);
-		else self.getToken(res);
+		else self.setToken(res);
 	});
 };
 
