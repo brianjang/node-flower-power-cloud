@@ -1,13 +1,11 @@
 var FlowerPowerCloud = require('./FlowerPowerCloud');
 
-var api = new FlowerPowerCloud();
+var api = new FlowerPowerCloud("...");
 var credentials = {
-	"grant_type": "",
-	"client_id": "",
-	"client_secret": "",
-	"username": "",
-	"password": "",
-	"app_identifier": ""
+	"client_id": "...",
+	"client_secret": "...",
+	"username": "...",
+	"password": "..."
 };
 
 api.login(credentials, function(err, res) {
